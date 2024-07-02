@@ -14,6 +14,7 @@ class QuestionUpdate(BaseModel):
     url: Optional[str] = None
     
 class Question(BaseModel):
+    id: uuid.UUID
     question: str
     answer: Optional[str]
     url: Optional[str]
