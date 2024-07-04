@@ -24,11 +24,8 @@ async def authenticate_request(request: Request, call_next):
             "/", 
             "/docs", 
             "/openapi.json",
-            "/api/v1/auth/google", 
-            "/api/v1/auth/facebook", 
-            "/favicon.ico", 
-            "/api/v1/auth/callback", 
-            "/api/v1/auth/exchange-token"
+            "/api/v1/auth/signin", 
+            "/favicon.ico",
         ]
     ):
         return await call_next(request)
