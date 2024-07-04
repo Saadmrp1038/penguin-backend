@@ -1,6 +1,0 @@
-বন্ধু ৫ টা API লাগবে...
-1. Add a new question. Body { question, answer, url }
-2. List of all questions.
-3. Get a question by id.
-4. Edit a question by id. Body { question, answer, url }
-5. Delete a question by id.
