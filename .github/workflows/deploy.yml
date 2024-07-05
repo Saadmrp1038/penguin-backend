@@ -22,8 +22,16 @@ jobs:
         passphrase: ${{ secrets.DROPLET_SSH_PASSPHRASE }}
         script: |
           cd /root/penguin-backend
-          git pull origin main
-          virtualenv venv
+          git fetch origin main
+          git reset --hard origin/main
+          if [ ! -d "venv" ]; then
+            virtualenv venv
+          fi
           source venv/bin/activate
-          pip install -r requirements.txt
+          pip install --no-cache-dir -r requirements.txt
+
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
           sudo systemctl restart fastapi.service
