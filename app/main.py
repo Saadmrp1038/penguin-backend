@@ -37,7 +37,8 @@ async def authenticate_request(request: Request, call_next):
     try:
         auth_response = supabase.auth.get_user(token)
         if not auth_response.user:
-            raise HTTPException(status_code=401, detail="Invalid user token")
+            # raise HTTPException(status_code=401, detail="Invalid user token")
+            return Response("Invalid user token", status_code=401)
 
         request.state.user_id = auth_response.user.id
     except Exception as e:
