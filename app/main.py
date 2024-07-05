@@ -3,6 +3,7 @@ from app.api.api_v1.api import api_router_v1
 from app.db import base  # Import base to register models
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.supabase import supabase
+from app.helpers.CustomMiddleWare import CORSMiddlewareWithErrors
 
 app = FastAPI()
 
@@ -10,9 +11,13 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
-    allow_credentials = False,
+    allow_credentials = True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
+)
+
+app.add_middleware(
+    CORSMiddlewareWithErrors
 )
 
 @app.middleware("http")
