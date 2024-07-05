@@ -3,21 +3,22 @@ from app.api.api_v1.api import api_router_v1
 from app.db import base  # Import base to register models
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.supabase import supabase
-from app.helpers.CustomMiddleWare import CORSMiddlewareWithErrors
 
 app = FastAPI()
+
+# Define the allowed origins
+origins = [
+    "http://localhost:3000",  # React frontend
+    "https://penguapi.priyolab.net/"
+]
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=origins,  # Allows all origins
     allow_credentials = True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
-)
-
-app.add_middleware(
-    CORSMiddlewareWithErrors
 )
 
 @app.middleware("http")
