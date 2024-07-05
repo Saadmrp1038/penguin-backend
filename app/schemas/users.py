@@ -6,6 +6,7 @@ from typing import Optional, List
 class UserCreate(BaseModel):
     user_name: str
     location: str
+    email: str
     platform: Optional[str] = None
     interest: Optional[str] = None
     
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
 class User(BaseModel):
     user_name: str
     location: str
+    email: str
     platform: Optional[List[str]]
     interest: Optional[List[str]]
     

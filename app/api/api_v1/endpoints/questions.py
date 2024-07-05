@@ -31,13 +31,13 @@ async def get_question_by_id(question_id: uuid.UUID, db: Session = Depends(deps.
 @router.get("/", response_model=List[Question])
 async def get_all_questions(db: Session = Depends(deps.get_db)):
     try:
-        db_questions = db.query(QuestionModel).all()
+        db_questions = db.query(QuestionModel).order_by(QuestionModel.updated_at.desc()).all()
         return db_questions
     except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
-#   CREATE
+#   CREATE QUESTION
 #################################################################################################
 @router.post("/", response_model=Question)
 async def create_question(*, db: Session = Depends(deps.get_db), question_in: QuestionCreate):
@@ -62,7 +62,7 @@ async def create_question(*, db: Session = Depends(deps.get_db), question_in: Qu
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 #################################################################################################
-#   UPDATE BY ID
+#   UPDATE QUESTION BY ID
 #################################################################################################
 @router.put("/{question_id}", response_model=Question)
 async def update_question_by_id(*, db: Session = Depends(deps.get_db), question_id: uuid.UUID, question_in: QuestionUpdate):
@@ -89,7 +89,7 @@ async def update_question_by_id(*, db: Session = Depends(deps.get_db), question_
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
-#   DELETE BY ID
+#   DELETE QUESTION BY ID
 #################################################################################################
 @router.delete("/{question_id}", response_model=dict)
 async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_id: uuid.UUID):
