@@ -7,7 +7,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_name = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     location = Column(String, nullable=False)
     email = Column(String, nullable=False)
     platform = Column(ARRAY(String), nullable=True)

@@ -33,7 +33,7 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
     
     try:
         db_user = UserModel(
-            user_name = user_in.user_name,
+            name = user_in.name,
             location = user_in.location,
             email = user_in.email,
             platform = user_in.platform,
