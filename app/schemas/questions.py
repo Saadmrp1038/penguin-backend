@@ -1,7 +1,7 @@
 import uuid
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
     
 class QuestionCreate(BaseModel):
     question: str
