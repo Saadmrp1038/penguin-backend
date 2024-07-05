@@ -1,6 +1,6 @@
 from typing import List
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
@@ -19,7 +19,7 @@ async def get_question_by_id(question_id: uuid.UUID, db: Session = Depends(deps.
     try:
         db_question = db.query(QuestionModel).filter(QuestionModel.id == question_id).first()
         if not db_question:
-            raise HTTPException(status_code=404, detail="Question not found")
+            return Response(status_code=404, detail="Question not found")
         return db_question
     except HTTPException as http_exc:
         raise http_exc
