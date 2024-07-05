@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, ARRAY, TIMESTAMP, UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
 class User(Base):
@@ -15,3 +16,6 @@ class User(Base):
     
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    
+    # one-to-many
+    chats = relationship("Chat", back_populates="user")
