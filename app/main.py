@@ -8,8 +8,7 @@ app = FastAPI()
 
 # Define the allowed origins
 origins = [
-    "http://localhost:3000",  # React frontend
-    "https://penguapi.priyolab.net/"
+    "*"
 ]
 
 # Add CORS middleware
