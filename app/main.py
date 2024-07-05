@@ -4,11 +4,16 @@ from app.db import base  # Import base to register models
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.supabase import supabase
 
-fastapi_app = FastAPI()
+app = FastAPI()
 
 # Add CORS middleware
-
-app = CORSMiddleware(app=fastapi_app, allow_origins=['*'])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials = True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.middleware("http")
 async def authenticate_request(request: Request, call_next):
