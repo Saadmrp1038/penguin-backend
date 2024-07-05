@@ -5,7 +5,6 @@ from app.api import deps
 from app.schemas.auth import UserAuth, TokenData
 from fastapi.responses import RedirectResponse
 from fastapi.responses import HTMLResponse
-from supabase import create_client
 from app.core.config import settings
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
