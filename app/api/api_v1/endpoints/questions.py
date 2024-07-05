@@ -16,14 +16,15 @@ router = APIRouter()
 #################################################################################################
 @router.get("/{question_id}", response_model=Question)
 async def get_question_by_id(question_id: uuid.UUID, db: Session = Depends(deps.get_db)):
-    
     try:
         db_question = db.query(QuestionModel).filter(QuestionModel.id == question_id).first()
         if not db_question:
             raise HTTPException(status_code=404, detail="Question not found")
         return db_question
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+        raise HTTPException(status_code=500, detail="Unexpected error occurred")
 
 #################################################################################################
 #   GET ALL QUESTIONS
@@ -79,6 +80,8 @@ async def update_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.refresh(db_question)
         
         return db_question
+    except HTTPException as http_exc:
+        raise http_exc
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except SQLAlchemyError as e:
@@ -102,6 +105,8 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.commit()
         
         return {"detail": "Question deleted successfully"}
+    except HTTPException as http_exc:
+        raise http_exc
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Database error: " + str(e))

@@ -22,6 +22,8 @@ async def get_user_by_email(email: str, db: Session = Depends(deps.get_db)):
         if not db_user:
             raise HTTPException(status_code=404, detail="User not found")
         return db_user
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
@@ -70,6 +72,8 @@ async def update_user_by_id(*, db: Session = Depends(deps.get_db), user_id: uuid
         db.refresh(db_user)
         
         return db_user
+    except HTTPException as http_exc:
+        raise http_exc
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except SQLAlchemyError as e:

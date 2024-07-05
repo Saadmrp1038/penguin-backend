@@ -1,7 +1,8 @@
 import uuid
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+from app.schemas.messages import Message
 
 class ChatCreate(BaseModel):
     user_id: uuid.UUID
@@ -18,3 +19,6 @@ class Chat(BaseModel):
     
     created_at: datetime
     updated_at: datetime
+    
+class ChatWithMessages(Chat):
+    messages: List[Message]
