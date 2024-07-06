@@ -36,19 +36,30 @@ async def authenticate_request(request: Request, call_next):
 
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        return Response("Unauthorized", status_code=401)
+        response = Response("Unauthorized", status_code=401)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
 
     token = auth_header.split(" ")[1]
     try:
         auth_response = supabase.auth.get_user(token)
         if not auth_response.user:
-            # raise HTTPException(status_code=401, detail="Invalid user token")
-            return Response("Invalid user token", status_code=401)
+            response = Response("Invalid user token", status_code=401)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
 
         request.state.user_id = auth_response.user.id
     except Exception as e:
+        response = Response("Invalid user token", status_code=401)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         print(f"Auth Error: {e}")
-        return Response("Invalid user token", status_code=401)
+        return response
 
     response = await call_next(request)
     return response
