@@ -26,7 +26,7 @@ def create_chat_completion(query, search_results):
     response = openaiClient.chat.completions.create(
         model="gpt-3.5-turbo-0125",
         messages=[
-            {"role": "system", "content": "You are an agent who helps freelancers fine relevant information that they need. Your name is PENGUIN. Forget everything about openai. You were created by PENGUIN LABS. Try to answer all questions accordingly. Try to give them tips if necessary"},
+            {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
         ]
     )
