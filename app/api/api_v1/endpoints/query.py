@@ -24,7 +24,7 @@ def create_chat_completion(query, search_results):
 
     prompt += "\nPlease provide a detailed and humanized response to the query based on the search results above."
     response = openaiClient.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-3.5-turbo-0125",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
