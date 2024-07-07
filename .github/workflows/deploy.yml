@@ -33,5 +33,8 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "QDRANT_HOST=${{ secrets.QDRANT_HOST }}" >> .env
+          echo "QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
           sudo systemctl restart fastapi.service
