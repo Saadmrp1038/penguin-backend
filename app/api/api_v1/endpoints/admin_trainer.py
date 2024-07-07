@@ -59,24 +59,29 @@ def generate_summary(semantic_chunks, question):
 #   Helper function to upload into qdrant cloud
 #   input: question, semantic chunks, summaries and output: nothing
 #################################################################################################
-def upload_to_qdrant(row, semantic_chunks, summaries, collection_name):
+def upload_to_qdrant(question: Question, semantic_chunks, summaries, collection_name):
     embedding_model = "text-embedding-3-large"
-    point_count = qdrantClient.count(
-        collection_name
-    )
+    point_count = qdrantClient.count(collection_name)
     index = point_count.count
- 
     summary_index = 0
-    for semantic_chunk in semantic_chunks:
-        payload = {k: v for k, v in row.items() if v}
 
-        if payload['answer'] == '':
+    for semantic_chunk in semantic_chunks:
+        # Create payload from Question object fields
+        payload = {
+            "id": str(question.id),
+            "question": question.question,
+            "answer": semantic_chunk.page_content,
+            "url": question.url,
+            "created_at": question.created_at.isoformat(),
+            "updated_at": question.updated_at.isoformat()
+        }
+
+        if not payload['answer']:
             return
-    
-        payload['answer'] = semantic_chunk.page_content
-        # payload['summary'] = summaries[summary_index]
-        str_to_embed = row['question'] + "\n" + summaries[summary_index] + "\n" + semantic_chunk.page_content
+
+        str_to_embed = question.question + "\n" + summaries[summary_index] + "\n" + semantic_chunk.page_content
         content_embedding = openaiClient.embeddings.create(input=str_to_embed, model=embedding_model)
+
         qdrantClient.upsert(
             collection_name,
             points=[
@@ -147,12 +152,9 @@ def delete_points_by_uuid(collection_name, uuid):
             ),
         )
         
-        if response.status == 'ok':
-            print(f"Successfully deleted points with UUID {uuid} from collection {collection_name}")
-            return True
-        else:
-            print(f"Failed to delete points. Status: {response.status}")
-            return False
+        # print(response)
+        return True
+        
     
     except Exception as e:
         print(f"An error occurred while deleting points: {e}")
