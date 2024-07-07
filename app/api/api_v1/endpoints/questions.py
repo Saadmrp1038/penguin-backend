@@ -154,6 +154,7 @@ async def insert_question_vector(question_id: uuid.UUID, db: Session = Depends(d
             upload_to_qdrant(db_question, semantic_chunks, summaries, "admin_trainer")
 
             # Update the last_trained field
+            current_time = datetime.now(timezone.utc)
             db_question.last_trained = datetime.now(timezone.utc)
             db.commit()
             db.refresh(db_question)
