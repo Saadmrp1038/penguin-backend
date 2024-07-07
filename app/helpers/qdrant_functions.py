@@ -1,13 +1,6 @@
-from typing import List
-import uuid
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from pydantic import ValidationError
 from qdrant_client import models
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
-from app.api import deps
 from app.schemas.questions import Question
 
 from app.core.qdrant import qdrantClient
@@ -159,71 +152,3 @@ def delete_points_by_uuid(collection_name, uuid):
     except Exception as e:
         print(f"An error occurred while deleting points: {e}")
         return False
-
-
-
-router = APIRouter()
-#################################################################################################
-#   Upload a question-answer to vector DB
-#################################################################################################
-@router.post("/vector_insert")
-async def insert_question_vector(question: Question):
-    if question.answer:
-        semantic_chunks = create_semantic_chunks(question.answer)
-        summaries = generate_summary(semantic_chunks, question)
-        upload_to_qdrant(question, semantic_chunks, summaries, "admin_trainer")
-        return {"detail": "Question added to vector DB successfully"}
-    else:
-        raise HTTPException(status_code=404, detail="Action could not be performed because answer is empty")
-
-
-
-#################################################################################################
-#   Update a question-answer in vector DB
-#################################################################################################
-@router.put("/put/{question_id}")
-async def update_question_vector(question_id: str, question: Question):
-    try:
-        collection_name = "admin_trainer"
-        
-        
-        delete_success = delete_points_by_uuid(collection_name, question_id)
-        if not delete_success:
-            raise HTTPException(status_code=500, detail="Failed to delete existing question from vector DB")
-        
-        
-        if question.answer:
-            semantic_chunks = create_semantic_chunks(question.answer)
-            summaries = generate_summary(semantic_chunks, question.question)
-            upload_to_qdrant(question, semantic_chunks, summaries, "admin_trainer")
-            
-            return {"detail": f"Question with ID {question.id} updated in vector DB successfully"}
-        else:
-            raise HTTPException(status_code=400, detail="Action could not be performed because answer is empty")
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred during update: {str(e)}")
-    
-    
-
-
-#################################################################################################
-#   Delete a question-answer from vector DB
-#################################################################################################
-@router.delete("/del/{question_id}")
-async def delete_question_vector(question_id: str):
-    try:
-        collection_name = "admin_trainer"
-        success = delete_points_by_uuid(collection_name, question_id)
-        
-        if success:
-            return {"detail": f"Question with ID {question_id} deleted from vector DB successfully"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to delete question from vector DB")
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-    
-
-

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,6 +9,7 @@ from pydantic import ValidationError
 from app.api import deps
 from app.schemas.questions import Question, QuestionCreate, QuestionUpdate
 from app.db.models.questions import Question as QuestionModel
+from app.helpers.qdrant_functions import create_semantic_chunks, generate_summary, get_points_by_uuid, delete_points_by_uuid, upload_to_qdrant
 
 router = APIRouter()
 
@@ -92,7 +94,7 @@ async def update_question_by_id(*, db: Session = Depends(deps.get_db), question_
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
-#   DELETE QUESTION BY ID
+#   DELETE QUESTION BY ID FROM DB AND QDRANT
 #################################################################################################
 @router.delete("/{question_id}", response_model=dict)
 async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_id: uuid.UUID):
@@ -104,7 +106,18 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.delete(db_question)
         db.commit()
         
-        return {"detail": "Question deleted successfully"}
+        try:
+            collection_name = "admin_trainer"
+            success = delete_points_by_uuid(collection_name, question_id)
+            
+            if success:
+                return {"detail": f"Question with ID {question_id} deleted from DB & vectorDB successfully"}
+            else:
+                raise HTTPException(status_code=500, detail="Failed to delete question from vectorDB")
+        
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"An error occurred while deleting from vectorDB: {str(e)}")
+        
     except HTTPException as http_exc:
         raise http_exc
     except SQLAlchemyError as e:
@@ -112,4 +125,33 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         raise HTTPException(status_code=500, detail="Database error: " + str(e))
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+    
+#################################################################################################
+#   VECTORIZE QUESTION AND UPLOAD TO QDRANT
+#################################################################################################
+@router.get("/{question_id}/train", response_model=dict)
+async def insert_question_vector(question_id: uuid.UUID, db: Session = Depends(deps.get_db)):
+    try:
+        db_question = db.query(QuestionModel).filter(QuestionModel.id == question_id).first()
+
+        if not db_question:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        if db_question.answer:
+            semantic_chunks = create_semantic_chunks(db_question.answer)
+            summaries = generate_summary(semantic_chunks, db_question)
+            upload_to_qdrant(db_question, semantic_chunks, summaries, "admin_trainer")
+
+            # Update the last_trained field
+            db_question.last_trained = datetime.now(timezone.utc)
+            db.commit()
+            db.refresh(db_question)
+            
+            return {"detail": "Question added to vector DB successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Action could not be performed because answer is empty")
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
