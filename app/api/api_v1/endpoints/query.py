@@ -44,15 +44,14 @@ async def insert_question_vector(*, queryText: str):
     response = qdrantClient.search(
         collection_name="admin_trainer",
         query_vector=("content", embedding),
-        limit=5,
+        limit=10,
     )   
     
     search_results = ""
     for obj in response:
-        question = obj.payload['question']
-        answer = obj.payload['answer']
-        search_results += f"**Question:** {question}\n**Answer:** {answer}\n\n"
+        search_results += f"{obj.payload}"
 
+    print(search_results)
     query_reponse = create_chat_completion(queryText, search_results)
     
     print(query_reponse)
