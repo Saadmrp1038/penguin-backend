@@ -108,7 +108,7 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         
         try:
             collection_name = "admin_trainer"
-            success = delete_points_by_uuid(collection_name, question_id)
+            success = delete_points_by_uuid(collection_name, str(question_id))
             
             if success:
                 return {"detail": f"Question with ID {question_id} deleted from DB & vectorDB successfully"}
@@ -133,6 +133,16 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
 @router.get("/{question_id}/train", response_model=dict)
 async def insert_question_vector(question_id: uuid.UUID, db: Session = Depends(deps.get_db)):
     try:
+        collection_name = "admin_trainer"
+        ids = get_points_by_uuid(collection_name, str(question_id))
+        print(len(ids))
+        if len(ids) != 0:
+            success = delete_points_by_uuid(collection_name, str(question_id))
+            
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to delete question from vectorDB")
+        
+        
         db_question = db.query(QuestionModel).filter(QuestionModel.id == question_id).first()
 
         if not db_question:
@@ -154,4 +164,5 @@ async def insert_question_vector(question_id: uuid.UUID, db: Session = Depends(d
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))

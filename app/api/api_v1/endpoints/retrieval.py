@@ -30,7 +30,7 @@ async def insert_question_vector(queryText: str):
     response = qdrantClient.search(
         collection_name="admin_trainer",
         query_vector=("content", embedding),
-        limit=1,
+        limit=5,
     )   
 
     print(response[0].payload)
