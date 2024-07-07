@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import questions, auth, protected, users, chats, admin_trainer
+from app.api.api_v1.endpoints import questions, auth, protected, users, chats, admin_trainer, retrieval
 
 api_router_v1 = APIRouter()
 
@@ -9,3 +9,4 @@ api_router_v1.include_router(protected.router, prefix="/protected", tags=["prote
 api_router_v1.include_router(users.router, prefix="/users", tags=["users"])
 api_router_v1.include_router(chats.router, prefix="/chats", tags=["chats"])
 api_router_v1.include_router(admin_trainer.router, prefix="/admin_trainer", tags=["admin_trainer"])
+api_router_v1.include_router(retrieval.router, prefix="/retrieval", tags=["retrieval"])

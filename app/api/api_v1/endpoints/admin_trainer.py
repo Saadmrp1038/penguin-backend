@@ -223,6 +223,7 @@ async def delete_question_vector(question_id: str):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
     
 
 
