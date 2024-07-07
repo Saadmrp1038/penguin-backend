@@ -36,7 +36,7 @@ router = APIRouter()
 #################################################################################################
 #   Upload a question-answer to vector DB
 #################################################################################################
-@router.post("/openai")
+@router.post("/openai", response_model=dict)
 async def insert_question_vector(*, queryText: str):
     embedding = create_embedding(queryText)
     
