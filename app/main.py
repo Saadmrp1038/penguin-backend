@@ -30,7 +30,7 @@ async def authenticate_request(request: Request, call_next):
             "/openapi.json",
             "/api/v1/auth/signin", 
             "/favicon.ico",
-            "/api/v1/retrieval/vector_retrieval"
+            "/api/v1/query/openai",
         ]
     ):
         return await call_next(request)
