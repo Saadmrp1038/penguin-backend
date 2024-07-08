@@ -5,3 +5,4 @@ from app.db.models.questions import Question
 from app.db.models.users import User
 from app.db.models.chats import Chat
 from app.db.models.messages import Message
+from app.db.models.domains import Domain
