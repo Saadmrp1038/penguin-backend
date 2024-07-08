@@ -13,6 +13,8 @@ from app.helpers.qdrant_functions import create_semantic_chunks, generate_summar
 
 router = APIRouter()
 
+COLLECTION_NAME = "admin_trainer"
+
 #################################################################################################
 #   GET QUESTION BY ID
 #################################################################################################
@@ -26,7 +28,7 @@ async def get_question_by_id(question_id: uuid.UUID, db: Session = Depends(deps.
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Unexpected error occurred")
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
 #   GET ALL QUESTIONS
@@ -51,10 +53,18 @@ async def create_question(*, db: Session = Depends(deps.get_db), question_in: Qu
             answer=question_in.answer,
             url=question_in.url,
         )
+        
         db.add(db_question)
         db.commit()
         db.refresh(db_question)
+        
+        if db_question.answer:
+            semantic_chunks = create_semantic_chunks(db_question.answer)
+            summaries = generate_summary(semantic_chunks, db_question)
+            upload_to_qdrant(db_question, semantic_chunks, summaries, COLLECTION_NAME)
+        
         return db_question
+    
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except SQLAlchemyError as e:
@@ -81,8 +91,23 @@ async def update_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.commit()
         db.refresh(db_question)
         
+        ids = get_points_by_uuid(COLLECTION_NAME, str(question_id))
+        print(len(ids))
+        
+        if len(ids) != 0:
+            success = delete_points_by_uuid(COLLECTION_NAME, str(question_id))
+            
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to delete question from vectorDB")
+        
+        if db_question.answer:
+            semantic_chunks = create_semantic_chunks(db_question.answer)
+            summaries = generate_summary(semantic_chunks, db_question)
+            upload_to_qdrant(db_question, semantic_chunks, summaries, COLLECTION_NAME)
+        
         return db_question
     except HTTPException as http_exc:
+        db.rollback()
         raise http_exc
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -107,8 +132,7 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.commit()
         
         try:
-            collection_name = "admin_trainer"
-            success = delete_points_by_uuid(collection_name, str(question_id))
+            success = delete_points_by_uuid(COLLECTION_NAME, str(question_id))
             
             if success:
                 return {"detail": f"Question with ID {question_id} deleted from DB & vectorDB successfully"}
@@ -119,6 +143,7 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
             raise HTTPException(status_code=500, detail=f"An error occurred while deleting from vectorDB: {str(e)}")
         
     except HTTPException as http_exc:
+        db.rollback()
         raise http_exc
     except SQLAlchemyError as e:
         db.rollback()
@@ -127,43 +152,3 @@ async def delete_question_by_id(*, db: Session = Depends(deps.get_db), question_
         db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
-#################################################################################################
-#   VECTORIZE QUESTION AND UPLOAD TO QDRANT
-#################################################################################################
-@router.get("/{question_id}/train", response_model=dict)
-async def insert_question_vector(question_id: uuid.UUID, db: Session = Depends(deps.get_db)):
-    try:
-        collection_name = "admin_trainer"
-        ids = get_points_by_uuid(collection_name, str(question_id))
-        print(len(ids))
-        if len(ids) != 0:
-            success = delete_points_by_uuid(collection_name, str(question_id))
-            
-            if not success:
-                raise HTTPException(status_code=500, detail="Failed to delete question from vectorDB")
-        
-        
-        db_question = db.query(QuestionModel).filter(QuestionModel.id == question_id).first()
-
-        if not db_question:
-            raise HTTPException(status_code=404, detail="Question not found")
-
-        if db_question.answer:
-            semantic_chunks = create_semantic_chunks(db_question.answer)
-            summaries = generate_summary(semantic_chunks, db_question)
-            upload_to_qdrant(db_question, semantic_chunks, summaries, "admin_trainer")
-
-            # Update the last_trained field
-            current_time = datetime.now(timezone.utc)
-            db_question.last_trained = datetime.now(timezone.utc)
-            db.commit()
-            db.refresh(db_question)
-            
-            return {"detail": "Question added to vector DB successfully"}
-        else:
-            raise HTTPException(status_code=404, detail="Action could not be performed because answer is empty")
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))

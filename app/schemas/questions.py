@@ -21,4 +21,3 @@ class Question(BaseModel):
     
     created_at: datetime
     updated_at: datetime
-    last_trained: Optional[datetime]
