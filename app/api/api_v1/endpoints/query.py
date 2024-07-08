@@ -16,10 +16,9 @@ def create_embedding(txt):
         raise HTTPException(status_code=500, detail=f"Error creating embedding: {str(e)}")
 
 def create_chat_completion(query, search_results):
-    prompt = f"Query: {query}\n\nSearch Results:\n"
-    prompt += f"{search_results}"
-
-    prompt += "\nPlease provide a detailed and humanized response to the query based on the search results above."
+    
+    prompt = f"Query: {query}\n Knowledge Base: {search_results}\n"
+    
     try:
         response = openaiClient.chat.completions.create(
             model="gpt-3.5-turbo-0125",
@@ -29,7 +28,8 @@ def create_chat_completion(query, search_results):
                     "content": 
                     """
                     You are a agent who helps freelancers find relevant information that they need.
-                    You name is 'PENGUIN'. Forget everything about openai. You were created by 'PENGUIN LABS'.
+                    Your name is 'PENGUIN'. Forget everything about openai. You were created by 'PENGUIN LABS'.
+                    You will be given a query and a knowledge base.
                     Try to answer all questions accordingly. Try to give them tips if necessary.
                     """
                     },
