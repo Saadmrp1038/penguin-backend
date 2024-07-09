@@ -10,7 +10,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     location = Column(String, nullable=False)
-    email = Column(String, nullable=True)
+    email = Column(String, nullable=False, unique=True)
     platform = Column(ARRAY(String), nullable=True)
     interest = Column(ARRAY(String), nullable=True)
     

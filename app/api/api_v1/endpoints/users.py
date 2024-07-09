@@ -36,7 +36,6 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
     
     try:
         db_user = UserModel(
-            id = user_in.id,
             name = user_in.name,
             location = user_in.location,
             email = user_in.email,
@@ -59,14 +58,13 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
 #################################################################################################
 #   CREATE USER IF DOES NOT EXIST
 #################################################################################################
-@router.post("/{user_id}", response_model=User)
-async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate, user_id: uuid.UUID,):
+@router.post("/{email}", response_model=User)
+async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate, email: str,):
     
     try:
-        db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        db_user = db.query(UserModel).filter(UserModel.email == email).first()
         if not db_user:
             db_user = UserModel(
-                id = user_in.id,
                 name = user_in.name,
                 location = user_in.location,
                 email = user_in.email,
