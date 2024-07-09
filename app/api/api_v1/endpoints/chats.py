@@ -6,18 +6,22 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 
 from app.api import deps
-from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages
+from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages, ChatResponse
 from app.db.models.chats import Chat as ChatModel
 from app.db.models.messages import Message as MessageModel
-from app.helpers.openai_functions import rag_query
+from app.schemas.messages import Message, MessageCreate
+from app.helpers.openai_functions import create_chat_completion
+from app.helpers.qdrant_functions import search_in_qdrant
 
 router = APIRouter()
+
+COLLECTION_NAME = "admin_trainer"
 
 #################################################################################################
 #   CREATE CHAT
 #################################################################################################
-@router.post("/", response_model=Chat)
-async def create_user(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate):
+@router.post("/", response_model = ChatResponse)
+async def create_chat(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate):
     
     try:
         db_chat = ChatModel(
@@ -28,17 +32,67 @@ async def create_user(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
         db.commit()
         db.refresh(db_chat)
         
-        db_message = MessageModel(
+        db_message_user = MessageModel(
             chat_id = db_chat.id,
             sender = "user",
             content = db_chat.first_message
         )
         
-        db.add(db_message)
+        db.add(db_message_user)
         db.commit()
-        db.refresh(db_message)
+        db.refresh(db_message_user)
         
-        return db_chat
+        queryText = db_chat.first_message
+        
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
+        
+        combined_result = ""
+        result_list = []
+        for result in search_results:
+            # print(result.payload)
+            combined_result += f"{result.payload}"
+            result_list.append(result.payload)
+        
+        openai_response = create_chat_completion(queryText, combined_result)
+        
+        db_message_assistant = MessageModel(
+            chat_id = db_chat.id,
+            sender = "assistant",
+            content = openai_response,
+            knowledge = result_list
+        )
+        
+        db.add(db_message_assistant)
+        db.commit()
+        db.refresh(db_message_assistant)
+        print(db_message_user.content)
+        response = ChatResponse(
+            id = db_chat.id,
+            user_id = db_chat.user_id,
+            first_message = db_chat.first_message,
+            created_at = db_chat.created_at,
+            updated_at = db_chat.updated_at,
+            query=Message(
+                id=db_message_user.id,
+                chat_id=db_message_user.chat_id,
+                sender=db_message_user.sender,
+                content=db_message_user.content,
+                knowledge=db_message_user.knowledge,
+                created_at=db_message_user.created_at,
+                updated_at=db_message_user.updated_at
+            ),
+            response=Message(
+                id=db_message_assistant.id,
+                chat_id=db_message_assistant.chat_id,
+                sender=db_message_assistant.sender,
+                content=db_message_assistant.content,
+                knowledge=db_message_assistant.knowledge,
+                created_at=db_message_assistant.created_at,
+                updated_at=db_message_assistant.updated_at
+            )
+        )
+        
+        return response
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except SQLAlchemyError as e:
@@ -47,7 +101,89 @@ async def create_user(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
+#################################################################################################
+#   UPDATE CHAT 
+#################################################################################################
+@router.put("/{chat_id}", response_model = ChatResponse)
+async def update_chat(*, db: Session = Depends(deps.get_db), chat_id: uuid.UUID, message_in: MessageCreate):
+    try:
+        db_chat = db.query(ChatModel).filter(ChatModel.id == chat_id).first()
+        if not db_chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        queryText = message_in.content
+        
+        db_message_user = MessageModel(
+            chat_id = db_chat.id,
+            sender = "user",
+            content = queryText
+        )
+        
+        db.add(db_message_user)
+        db.commit()
+        db.refresh(db_message_user)
+        
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
+        
+        combined_result = ""
+        result_list = []
+        for result in search_results:
+            # print(result.payload)
+            combined_result += f"{result.payload}"
+            result_list.append(result.payload)
+        
+        openai_response = create_chat_completion(queryText, combined_result)
+        
+        db_message_assistant = MessageModel(
+            chat_id = db_chat.id,
+            sender = "assistant",
+            content = openai_response,
+            knowledge = result_list
+        )
+        
+        db.add(db_message_assistant)
+        db.commit()
+        db.refresh(db_message_assistant)
+        print(db_message_user.content)
+        response = ChatResponse(
+            id = db_chat.id,
+            user_id = db_chat.user_id,
+            first_message = db_chat.first_message,
+            created_at = db_chat.created_at,
+            updated_at = db_chat.updated_at,
+            query=Message(
+                id=db_message_user.id,
+                chat_id=db_message_user.chat_id,
+                sender=db_message_user.sender,
+                content=db_message_user.content,
+                knowledge=db_message_user.knowledge,
+                created_at=db_message_user.created_at,
+                updated_at=db_message_user.updated_at
+            ),
+            response=Message(
+                id=db_message_assistant.id,
+                chat_id=db_message_assistant.chat_id,
+                sender=db_message_assistant.sender,
+                content=db_message_assistant.content,
+                knowledge=db_message_assistant.knowledge,
+                created_at=db_message_assistant.created_at,
+                updated_at=db_message_assistant.updated_at
+            )
+        )
+        
+        return response
     
+    except HTTPException as http_exc:
+        raise http_exc
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 #################################################################################################
 #   DELETE CHAT BY ID

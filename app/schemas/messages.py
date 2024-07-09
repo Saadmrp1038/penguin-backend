@@ -1,11 +1,9 @@
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 
 class MessageCreate(BaseModel):
-    chat_id: uuid.UUID
-    sender: str = "user"
     content: str
     
 class MessageUpdate(BaseModel):
@@ -17,7 +15,7 @@ class Message(BaseModel):
     
     sender: str
     content: str
-    knowledge: Optional[str]
+    knowledge: Optional[List[Dict]] = None
     
     created_at: datetime
     updated_at: datetime

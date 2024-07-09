@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import UUID, Column, String, DateTime, ForeignKey, ARRAY
+from sqlalchemy import JSON, UUID, Column, String, DateTime, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from app.db.base_class import Base
@@ -13,7 +13,7 @@ class Message(Base):
     
     sender = Column(String, nullable=False)
     content = Column(String, nullable=False)
-    knowledge = Column(String, nullable=True)
+    knowledge = Column(ARRAY(JSON), nullable=True)
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

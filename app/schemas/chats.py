@@ -19,6 +19,11 @@ class Chat(BaseModel):
     
     created_at: datetime
     updated_at: datetime
+
+class ChatResponse(Chat):
+    query: Message
+    response: Message
     
+
 class ChatWithMessages(Chat):
     messages: List[Message]
