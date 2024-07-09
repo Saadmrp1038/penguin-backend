@@ -51,7 +51,7 @@ async def create_issue(*, db: Session = Depends(deps.get_db), issue_in: IssueCre
 #################################################################################################
 #   UPDATE ISSUE
 #################################################################################################
-@router.post("/{issue_id}", response_model = Issue)
+@router.put("/{issue_id}", response_model = Issue)
 async def update_issue(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUID, issue_in: IssueUpdate):
     
     try:
