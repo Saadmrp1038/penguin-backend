@@ -1,4 +1,5 @@
 from app.core.openai import openaiClient
+from app.helpers.qdrant_functions import search_in_qdrant
 from fastapi import  HTTPException
 
 def create_chat_completion(query, search_results):
@@ -25,3 +26,21 @@ def create_chat_completion(query, search_results):
         return response.choices[0].message.content
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating chat completion: {str(e)}")
+    
+    
+def rag_query(COLLECTION_NAME, queryText, limit):
+    try:
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, limit)
+        
+        combined_result = ""
+        for result in search_results:
+            combined_result += f"{result.payload}"
+            
+
+        openai_response = create_chat_completion(queryText, combined_result)
+        return openai_response
+    
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred in rag query: {str(e)}")

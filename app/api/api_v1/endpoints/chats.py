@@ -9,6 +9,7 @@ from app.api import deps
 from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages
 from app.db.models.chats import Chat as ChatModel
 from app.db.models.messages import Message as MessageModel
+from app.helpers.openai_functions import rag_query
 
 router = APIRouter()
 
@@ -21,11 +22,22 @@ async def create_user(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
     try:
         db_chat = ChatModel(
             user_id = chat_in.user_id,
-            name = chat_in.name
+            first_message = chat_in.first_message
         )
         db.add(db_chat)
         db.commit()
         db.refresh(db_chat)
+        
+        db_message = MessageModel(
+            chat_id = db_chat.id,
+            sender = "user",
+            content = db_chat.first_message
+        )
+        
+        db.add(db_message)
+        db.commit()
+        db.refresh(db_message)
+        
         return db_chat
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))

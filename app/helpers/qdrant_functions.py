@@ -164,8 +164,8 @@ def delete_points_by_uuid(collection_name, uuid):
 def search_in_qdrant(collection_name, query, limit):
     try:
         embedding = create_embedding(query)
-        print(len(embedding))
-        print(query)
+        # print(len(embedding))
+        # print(query)
         results = qdrantClient.search(
                 collection_name = collection_name,
                 query_vector = ("content", embedding),
