@@ -11,7 +11,6 @@ class IssueCreate(BaseModel):
     message_content : str
     
     feedback : Optional[str] = None
-    status : str = "open"
 
 class IssueUpdate(BaseModel):
     response : Optional[str] = None
