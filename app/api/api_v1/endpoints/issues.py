@@ -12,7 +12,7 @@ from app.db.models.chats import Chat as ChatModel
 from app.db.models.messages import Message as MessageModel
 
 from app.schemas.messages import Message, MessageCreate
-from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages, ChatRespone
+from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages, ChatResponse
 from app.schemas.issues import Issue, IssueCreate, IssueUpdate
 
 router = APIRouter()
