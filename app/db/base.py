@@ -6,3 +6,4 @@ from app.db.models.users import User
 from app.db.models.chats import Chat
 from app.db.models.messages import Message
 from app.db.models.domains import Domain
+from app.db.models.issues import Issue
