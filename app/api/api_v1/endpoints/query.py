@@ -26,6 +26,7 @@ async def query_openai(query_in: Query):
         combined_result = ""
         for result in search_results:
             combined_result += f"{result.payload}"
+            
 
         openai_response = create_chat_completion(queryText, combined_result)
         

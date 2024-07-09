@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from qdrant_client import models
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
@@ -13,9 +14,12 @@ from app.core.openai import openaiClient
 #   used method: percentile -> default value for breakpoint = 95%
 #################################################################################################
 def create_semantic_chunks(text_content):
-    semantic_chunker = SemanticChunker(OpenAIEmbeddings(model="text-embedding-3-large"), breakpoint_threshold_type="percentile")
-    semantic_chunks = semantic_chunker.create_documents([text_content])
-    return semantic_chunks
+    try:
+        semantic_chunker = SemanticChunker(OpenAIEmbeddings(model="text-embedding-3-large"), breakpoint_threshold_type="percentile")
+        semantic_chunks = semantic_chunker.create_documents([text_content])
+        return semantic_chunks
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating embedding: {str(e)}")
 
 #################################################################################################
 #   Helper function to get the vector embedding for any text
@@ -150,8 +154,7 @@ def delete_points_by_uuid(collection_name, uuid):
         
     
     except Exception as e:
-        print(f"An error occurred while deleting points: {e}")
-        return False
+         raise HTTPException(status_code=500, detail="Error occurred while deleting from vectorDB")
     
 #################################################################################################
 #   Helper function to SEARCH in a collection with given query
@@ -161,14 +164,19 @@ def delete_points_by_uuid(collection_name, uuid):
 def search_in_qdrant(collection_name, query, limit):
     try:
         embedding = create_embedding(query)
+        print(len(embedding))
+        print(query)
         results = qdrantClient.search(
                 collection_name = collection_name,
-                query_vector = embedding,
+                query_vector = ("content", embedding),
                 limit=limit,
+                with_payload=True,
+                with_vectors=False,
             )
-        
+
         return results
-        
+    
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        print(f"An error occurred while deleting points: {e}")
-        return False
+        raise HTTPException(status_code=500, detail=f"Error occurred while searching in vectorDB {str(e)}")
