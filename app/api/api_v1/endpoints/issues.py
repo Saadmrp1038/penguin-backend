@@ -25,11 +25,11 @@ async def create_issue(*, db: Session = Depends(deps.get_db), issue_in: IssueCre
     
     try:
         db_issue = IssueModel(
-            user_id = IssueCreate.user_id,
-            chat_id = IssueCreate.chat_id,
-            message_id = IssueCreate.message_id,
-            message_content = IssueCreate.message_content,     
-            feedback = IssueCreate.feedback,
+            user_id = issue_in.user_id,
+            chat_id = issue_in.chat_id,
+            message_id = issue_in.message_id,
+            message_content = issue_in.message_content,     
+            feedback = issue_in.feedback,
             status = "open"
         )
         
