@@ -4,11 +4,12 @@ from datetime import datetime
 from typing import Optional, List
 
 class UserCreate(BaseModel):
+    id: uuid.UUID
     name: str
     location: str
-    email: str
-    platform: Optional[str] = None
-    interest: Optional[str] = None
+    email: Optional[str] = None
+    platform: Optional[List[str]] = None
+    interest: Optional[List[str]] = None
     
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -20,9 +21,9 @@ class User(BaseModel):
     id: uuid.UUID
     name: str
     location: str
-    email: str
-    platform: Optional[List[str]]
-    interest: Optional[List[str]]
+    email: Optional[str] = None
+    platform: Optional[List[str]] = None
+    interest: Optional[List[str]] = None
     
     created_at: datetime
     updated_at: datetime

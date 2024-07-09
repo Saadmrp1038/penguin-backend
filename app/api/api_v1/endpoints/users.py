@@ -12,13 +12,13 @@ from app.db.models.users import User as UserModel
 router = APIRouter()
 
 #################################################################################################
-#   GET USER BY EMAIL
+#   GET USER BY ID
 #################################################################################################
-@router.get("/{email}", response_model=User)
-async def get_user_by_email(email: str, db: Session = Depends(deps.get_db)):
+@router.get("/{user_id}", response_model=User)
+async def get_user_by_email(user_id: uuid.UUID, db: Session = Depends(deps.get_db)):
     
     try:
-        db_user = db.query(UserModel).filter(UserModel.email == email).first()
+        db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
         if not db_user:
             raise HTTPException(status_code=404, detail="User not found")
         return db_user
@@ -26,7 +26,8 @@ async def get_user_by_email(email: str, db: Session = Depends(deps.get_db)):
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
-    
+
+
 #################################################################################################
 #   CREATE USER
 #################################################################################################
@@ -35,6 +36,7 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
     
     try:
         db_user = UserModel(
+            id = user_in.id,
             name = user_in.name,
             location = user_in.location,
             email = user_in.email,
@@ -53,7 +55,38 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
+#################################################################################################
+#   CREATE USER IF DOES NOT EXIST
+#################################################################################################
+@router.post("/{user_id}", response_model=User)
+async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate, user_id: uuid.UUID,):
     
+    try:
+        db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if not db_user:
+            db_user = UserModel(
+                id = user_in.id,
+                name = user_in.name,
+                location = user_in.location,
+                email = user_in.email,
+                platform = user_in.platform,
+                interest = user_in.interest
+            )
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+        return db_user
+    
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
 #################################################################################################
 #   UPDATE USER BY ID
 #################################################################################################
