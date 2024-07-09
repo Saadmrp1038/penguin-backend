@@ -152,3 +152,23 @@ def delete_points_by_uuid(collection_name, uuid):
     except Exception as e:
         print(f"An error occurred while deleting points: {e}")
         return False
+    
+#################################################################################################
+#   Helper function to SEARCH in a collection with given query
+#   input: UUID and output: array of points
+#################################################################################################
+
+def search_in_qdrant(collection_name, query, limit):
+    try:
+        embedding = create_embedding(query)
+        results = qdrantClient.search(
+                collection_name = collection_name,
+                query_vector = embedding,
+                limit=limit,
+            )
+        
+        return results
+        
+    except Exception as e:
+        print(f"An error occurred while deleting points: {e}")
+        return False
