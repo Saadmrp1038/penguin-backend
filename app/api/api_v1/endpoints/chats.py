@@ -146,6 +146,7 @@ async def update_chat(*, db: Session = Depends(deps.get_db), chat_id: uuid.UUID,
         db.commit()
         db.refresh(db_message_assistant)
         print(db_message_user.content)
+        
         response = ChatResponse(
             id = db_chat.id,
             user_id = db_chat.user_id,

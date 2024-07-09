@@ -102,41 +102,10 @@ async def get_issue_with_chat(*, db: Session = Depends(deps.get_db), issue_id: u
         # Sort messages by created_at
         db_chat.messages.sort(key=lambda message: message.created_at)
         
-        # Serialize messages
-        messages = [Message(
-            id=msg.id,
-            chat_id=msg.chat_id,
-            sender=msg.sender,
-            content=msg.content,
-            knowledge=msg.knowledge,
-            created_at=msg.created_at,
-            updated_at=msg.updated_at
-        ) for msg in db_chat.messages]
-
-        # Create ChatWithMessages instance
-        chat_with_messages = ChatWithMessages(
-            id=db_chat.id,
-            user_id=db_chat.user_id,
-            first_message=db_chat.first_message,
-            created_at=db_chat.created_at,
-            updated_at=db_chat.updated_at,
-            messages=messages
-        )
-
-        # Create IssueWithChat instance
-        response = IssueWithChat(
-            id=db_issue.id,
-            user_id=db_issue.user_id,
-            chat_id=db_issue.chat_id,
-            message_id=db_issue.message_id,
-            message_content=db_issue.message_content,
-            feedback=db_issue.feedback,
-            response=db_issue.response,
-            status=db_issue.status,
-            created_at=db_issue.created_at,
-            updated_at=db_issue.updated_at,
-            chat=chat_with_messages
-        )
+        response = db_issue
+        response.chat = db_chat
+        
+        # response = IssueWithChat.model_validate(db_issue)
         
         return response
     

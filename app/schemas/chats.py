@@ -27,3 +27,4 @@ class ChatResponse(Chat):
 
 class ChatWithMessages(Chat):
     messages: List[Message]
+    
