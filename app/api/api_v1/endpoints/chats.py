@@ -215,7 +215,7 @@ async def delete_chat_by_id(*, db: Session = Depends(deps.get_db), chat_id: uuid
 @router.get("/users/{user_id}", response_model=List[Chat])
 async def get_chats_for_user(*, db: Session = Depends(deps.get_db), user_id: uuid.UUID):
     try:
-        db_chats = db.query(ChatModel).filter(ChatModel.user_id == user_id).all()
+        db_chats = db.query(ChatModel).filter(ChatModel.user_id == user_id).order_by(ChatModel.created_at.desc()).all()
         return db_chats
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Database error: " + str(e))

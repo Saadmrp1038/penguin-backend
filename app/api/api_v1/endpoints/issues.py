@@ -9,11 +9,10 @@ from app.api import deps
 
 from app.db.models.issues import Issue as IssueModel
 from app.db.models.chats import Chat as ChatModel
-from app.db.models.messages import Message as MessageModel
 
-from app.schemas.messages import Message, MessageCreate
-from app.schemas.chats import Chat, ChatCreate, ChatUpdate, ChatWithMessages, ChatResponse
-from app.schemas.issues import Issue, IssueCreate, IssueUpdate
+from app.schemas.chats import ChatWithMessages
+from app.schemas.issues import Issue, IssueCreate, IssueUpdate, IssueWithChat
+from app.schemas.messages import Message
 
 router = APIRouter()
 
@@ -77,7 +76,73 @@ async def update_issue(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUI
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
+
+#################################################################################################
+#   GET ISSUES ALONG WITH RELATED CHAT WITH ISSUE ID
+#################################################################################################
+
+@router.get("/{issue_id}/chat", response_model=IssueWithChat)
+async def get_issue_with_chat(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUID):
+    try:
+        db_issue = db.query(IssueModel).filter(IssueModel.id == issue_id).first()
+        
+        if not db_issue:
+            raise HTTPException(status_code=404, detail="Issue not found")
+        
+        db_chat = (
+            db.query(ChatModel)
+            .options(joinedload(ChatModel.messages))
+            .filter(ChatModel.id == db_issue.chat_id)
+            .first()
+        )
+        if not db_chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        
+        # Sort messages by created_at
+        db_chat.messages.sort(key=lambda message: message.created_at)
+        
+        # Serialize messages
+        messages = [Message(
+            id=msg.id,
+            chat_id=msg.chat_id,
+            sender=msg.sender,
+            content=msg.content,
+            knowledge=msg.knowledge,
+            created_at=msg.created_at,
+            updated_at=msg.updated_at
+        ) for msg in db_chat.messages]
+
+        # Create ChatWithMessages instance
+        chat_with_messages = ChatWithMessages(
+            id=db_chat.id,
+            user_id=db_chat.user_id,
+            first_message=db_chat.first_message,
+            created_at=db_chat.created_at,
+            updated_at=db_chat.updated_at,
+            messages=messages
+        )
+
+        # Create IssueWithChat instance
+        response = IssueWithChat(
+            id=db_issue.id,
+            user_id=db_issue.user_id,
+            chat_id=db_issue.chat_id,
+            message_id=db_issue.message_id,
+            message_content=db_issue.message_content,
+            feedback=db_issue.feedback,
+            response=db_issue.response,
+            status=db_issue.status,
+            created_at=db_issue.created_at,
+            updated_at=db_issue.updated_at,
+            chat=chat_with_messages
+        )
+        
+        return response
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
 #################################################################################################
 #   GET ALL ISSUES
 #################################################################################################

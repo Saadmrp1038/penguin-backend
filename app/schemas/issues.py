@@ -2,6 +2,7 @@ import uuid
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
+from app.schemas.chats import ChatWithMessages
 
 class IssueCreate(BaseModel):
     user_id : uuid.UUID
@@ -31,3 +32,6 @@ class Issue(BaseModel):
     
     created_at: datetime
     updated_at: datetime
+    
+class IssueWithChat(Issue):
+    chat: ChatWithMessages
