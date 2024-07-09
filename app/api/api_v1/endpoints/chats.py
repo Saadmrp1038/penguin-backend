@@ -1,7 +1,7 @@
 from typing import List
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload, subqueryload
+from sqlalchemy.orm import Session, joinedload, contains_eager, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 
@@ -259,12 +259,16 @@ async def get_chat_with_messages(*, db: Session = Depends(deps.get_db), chat_id:
     try:
         db_chat = (
             db.query(ChatModel)
-            .options(subqueryload(ChatModel.messages).order_by(MessageModel.created_at))
+            .options(joinedload(ChatModel.messages))
             .filter(ChatModel.id == chat_id)
             .first()
         )
         if not db_chat:
             raise HTTPException(status_code=404, detail="Chat not found")
+        
+        # Sort messages by created_at
+        db_chat.messages.sort(key=lambda message: message.created_at)
+        
         return db_chat
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Database error: " + str(e))

@@ -83,9 +83,10 @@ async def update_issue(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUI
 #################################################################################################
 
 @router.get("/", response_model=List[Issue])
-async def get_all_questions(db: Session = Depends(deps.get_db)):
+async def get_all_issues(db: Session = Depends(deps.get_db)):
     try:
         db_issues = db.query(IssueModel).order_by(IssueModel.created_at.desc()).all()
         return db_issues
     except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+    
