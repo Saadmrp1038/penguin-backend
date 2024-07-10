@@ -16,7 +16,10 @@ class IssueCreate(BaseModel):
 class IssueUpdate(BaseModel):
     response : Optional[str] = None
     status : Optional[str] = None
-  
+
+class IssueUpdateClient(BaseModel):
+    feedback : Optional[str] = None
+
 class Issue(BaseModel):
     id : uuid.UUID
     user_id : uuid.UUID

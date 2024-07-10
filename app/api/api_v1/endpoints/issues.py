@@ -11,7 +11,7 @@ from app.db.models.issues import Issue as IssueModel
 from app.db.models.chats import Chat as ChatModel
 
 from app.schemas.chats import ChatWithMessages
-from app.schemas.issues import Issue, IssueCreate, IssueUpdate, IssueWithChat
+from app.schemas.issues import Issue, IssueCreate, IssueUpdate, IssueWithChat, IssueUpdateClient
 from app.schemas.messages import Message
 
 router = APIRouter()
@@ -48,10 +48,10 @@ async def create_issue(*, db: Session = Depends(deps.get_db), issue_in: IssueCre
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 #################################################################################################
-#   UPDATE ISSUE
+#   UPDATE ISSUE FROM ADMIN SIDE
 #################################################################################################
 @router.put("/{issue_id}", response_model = Issue)
-async def update_issue(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUID, issue_in: IssueUpdate):
+async def update_issue_from_admin(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUID, issue_in: IssueUpdate):
     
     try:
         db_issue = db.query(IssueModel).filter(IssueModel.id == issue_id).first()
@@ -77,6 +77,35 @@ async def update_issue(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUI
         db.rollback()
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
+#################################################################################################
+#   UPDATE ISSUE FROM CLIENT SIDE
+#################################################################################################
+@router.put("/{issue_id}/user", response_model = Issue)
+async def update_issue_from_client(*, db: Session = Depends(deps.get_db), issue_id: uuid.UUID, issue_in: IssueUpdateClient):
+    
+    try:
+        db_issue = db.query(IssueModel).filter(IssueModel.id == issue_id).first()
+        
+        if not db_issue:
+            raise HTTPException(status_code=404, detail="Issue not found")
+        
+        update_data = issue_in.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_issue, key, value)
+
+        db.commit()
+        db.refresh(db_issue)
+        
+        return db_issue
+    
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
 #   GET ISSUES ALONG WITH RELATED CHAT WITH ISSUE ID
@@ -124,3 +153,14 @@ async def get_all_issues(db: Session = Depends(deps.get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
+#################################################################################################
+#   GET ALL ISSUES BY USER ID
+#################################################################################################
+
+@router.get("/{user_id}", response_model=List[Issue])
+async def get_all_issues(*,db: Session = Depends(deps.get_db), user_id: uuid.UUID):
+    try:
+        db_issues = db.query(IssueModel).filter(IssueModel.user_id==user_id).order_by(IssueModel.created_at.desc()).all()
+        return db_issues
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
