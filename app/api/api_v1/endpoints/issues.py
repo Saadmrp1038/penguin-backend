@@ -157,7 +157,7 @@ async def get_all_issues(db: Session = Depends(deps.get_db)):
 #   GET ALL ISSUES BY USER ID
 #################################################################################################
 
-@router.get("/{user_id}", response_model=List[Issue])
+@router.get("/users/{user_id}", response_model=List[Issue])
 async def get_all_issues(*,db: Session = Depends(deps.get_db), user_id: uuid.UUID):
     try:
         db_issues = db.query(IssueModel).filter(IssueModel.user_id==user_id).order_by(IssueModel.created_at.desc()).all()
