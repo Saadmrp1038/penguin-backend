@@ -1,3 +1,4 @@
+import httpx
 from datetime import datetime, timezone
 from typing import List
 import uuid
@@ -14,27 +15,15 @@ from app.helpers.qdrant_functions import create_semantic_chunks, generate_summar
 router = APIRouter()
 
 COLLECTION_NAME = "admin_trainer"
+local_path = "http://127.0.0.1:8001"
+deploy_path = ""
 
-#################################################################################################
-#   GET Train info BY url
-#################################################################################################
-@router.get("/{url}", response_model=webUrlTrain)
-async def get_traininfo_by_url(url: str, db: Session = Depends(deps.get_db)):
-    try:
-        db_url = db.query(urlModel).filter(urlModel.url == url).first()
-        if not db_url:
-            raise HTTPException(status_code=404, detail="URL not found")
-        return db_url
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 #################################################################################################
 #   GET Train info BY ID
 #################################################################################################
-@router.get("/{url_train_id}", response_model=webUrlTrain)
-async def get_question_by_id(url_train_id: uuid.UUID, db: Session = Depends(deps.get_db)):
+@router.get("/id/{url_train_id}", response_model=webUrlTrain)
+async def get_traininfo_by_id(url_train_id: uuid.UUID, db: Session = Depends(deps.get_db)):
     try:
         db_url = db.query(urlModel).filter(urlModel.id == url_train_id).first()
         if not db_url:
@@ -49,7 +38,7 @@ async def get_question_by_id(url_train_id: uuid.UUID, db: Session = Depends(deps
 #   GET ALL URL models
 #################################################################################################
 @router.get("/", response_model=List[webUrlTrain])
-async def get_all_questions(db: Session = Depends(deps.get_db)):
+async def get_all_traininfo(db: Session = Depends(deps.get_db)):
     try:
         db_urls = db.query(urlModel).order_by(urlModel.scraped_at.desc()).all()
         return db_urls
@@ -60,7 +49,7 @@ async def get_all_questions(db: Session = Depends(deps.get_db)):
 #   CREATE Train with URL
 #################################################################################################
 @router.post("/", response_model=webUrlTrain)
-async def create_question(url:str , db: Session = Depends(deps.get_db)):
+async def create_traininfo(url:str , db: Session = Depends(deps.get_db)):
     
     try:
         db_url = urlModel(
@@ -70,14 +59,40 @@ async def create_question(url:str , db: Session = Depends(deps.get_db)):
         db.add(db_url)
         db.commit()
         db.refresh(db_url)
+
+        secondary_backend_response = {}
         
         if len(db_url.url) > 0:
-            # semantic_chunks = create_semantic_chunks(db_question.answer)
-            # summaries = generate_summary(semantic_chunks, db_question)
-            # upload_to_qdrant(db_question, semantic_chunks, summaries, COLLECTION_NAME)
-            print("2nd backend e pathaitesi")
+            # Send the URL to the secondary backend
+            async with httpx.AsyncClient() as client:
+                postUrl = "http://127.0.0.1:8001/api/v1/scrape/scrape/"
+                payload = {"url": db_url.url, "id": str(db_url.id)}
+                print(f"Sending payload to secondary backend: {payload}")
+                response = await client.post(postUrl, json=payload)
+                response.raise_for_status()
+                secondary_backend_response = response.json()  # Assuming the response from the secondary backend is JSON
         
-        return db_url
+        return {
+            "db_url": db_url,
+            "secondary_backend_response": secondary_backend_response,
+            "message": "Traininfo created and processed successfully."
+        }
+        
+        # if len(db_url.url) > 0:
+        #     async with httpx.AsyncClient() as client:
+        #         print(db_url.id, db_url.url)
+        #         postUrl = local_path + "/api/v1/scrape/scrape/"
+        #         # just apply deploy path here
+        #         response = await client.post(postUrl, json={"url": db_url.url, "id": str(db_url.id)})
+        #         print(response)
+        #         response.raise_for_status()
+        #         secondary_backend_response = response.json()
+        
+        # return {
+        #     "db_url": db_url,
+        #     "secondary_backend_response": secondary_backend_response,
+        #     "message": "Traininfo created and processed successfully."
+        # }
     
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
