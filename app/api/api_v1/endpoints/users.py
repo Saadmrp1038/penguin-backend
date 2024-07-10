@@ -8,7 +8,8 @@ from pydantic import ValidationError
 from app.api import deps
 from app.schemas.users import User, UserCreate, UserUpdate
 from app.db.models.users import User as UserModel
-
+from app.db.models.issues import Issue as IssueModel
+from app.schemas.issues import Issue, IssueUpdateClient
 router = APIRouter()
 
 #################################################################################################
@@ -112,4 +113,17 @@ async def update_user_by_id(*, db: Session = Depends(deps.get_db), user_id: uuid
         raise HTTPException(status_code=500, detail="Database error: " + str(e))
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+    
+    
+#################################################################################################
+#   GET ALL ISSUES BY USER ID
+#################################################################################################
+
+@router.get("/{user_id}/issues", response_model=List[Issue])
+async def get_all_issues(*,db: Session = Depends(deps.get_db), user_id: uuid.UUID):
+    try:
+        db_issues = db.query(IssueModel).filter(IssueModel.user_id==user_id).order_by(IssueModel.created_at.desc()).all()
+        return db_issues
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
