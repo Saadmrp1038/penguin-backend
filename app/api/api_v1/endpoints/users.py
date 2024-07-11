@@ -29,6 +29,22 @@ async def get_user_by_email(user_id: uuid.UUID, db: Session = Depends(deps.get_d
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
+#   GET USER BY EMAIL
+#################################################################################################
+@router.get("/email/{email}", response_model=User)
+async def get_user_by_email(email: str, db: Session = Depends(deps.get_db)):
+    
+    try:
+        db_user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return db_user
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
+#################################################################################################
 #   GET ALL USERS
 #################################################################################################
 @router.get("/", response_model=List[User])
