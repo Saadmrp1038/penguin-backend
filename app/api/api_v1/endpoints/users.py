@@ -74,7 +74,7 @@ async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate
 #################################################################################################
 #   CREATE USER IF DOES NOT EXIST
 #################################################################################################
-@router.post("/{email}", response_model=User)
+@router.post("/{email}/exists", response_model=User)
 async def create_user(*, db: Session = Depends(deps.get_db), user_in: UserCreate, email: str,):
     
     try:
