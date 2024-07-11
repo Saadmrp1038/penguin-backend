@@ -63,44 +63,33 @@ async def create_traininfo(url:str , db: Session = Depends(deps.get_db)):
         secondary_backend_response = {}
         
         if len(db_url.url) > 0:
-            # Send the URL to the secondary backend
-            async with httpx.AsyncClient() as client:
-                postUrl = "http://127.0.0.1:8001/api/v1/scrape/scrape/"
+            async with httpx.AsyncClient(timeout=1000) as client:
+                postUrl = local_path + "/api/v1/scrape/scrape/"
                 payload = {"url": db_url.url, "id": str(db_url.id)}
                 print(f"Sending payload to secondary backend: {payload}")
                 response = await client.post(postUrl, json=payload)
                 response.raise_for_status()
                 secondary_backend_response = response.json()  # Assuming the response from the secondary backend is JSON
+                print(f"Received response from secondary backend: {secondary_backend_response}")
         
-        return {
-            "db_url": db_url,
-            "secondary_backend_response": secondary_backend_response,
-            "message": "Traininfo created and processed successfully."
-        }
-        
-        # if len(db_url.url) > 0:
-        #     async with httpx.AsyncClient() as client:
-        #         print(db_url.id, db_url.url)
-        #         postUrl = local_path + "/api/v1/scrape/scrape/"
-        #         # just apply deploy path here
-        #         response = await client.post(postUrl, json={"url": db_url.url, "id": str(db_url.id)})
-        #         print(response)
-        #         response.raise_for_status()
-        #         secondary_backend_response = response.json()
-        
-        # return {
-        #     "db_url": db_url,
-        #     "secondary_backend_response": secondary_backend_response,
-        #     "message": "Traininfo created and processed successfully."
-        # }
+        return webUrlTrain(
+            id=db_url.id,
+            url=db_url.url,
+            scraped_at=datetime.now(timezone.utc)
+        )
+
     
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except httpx.HTTPStatusError as http_exc:
+        print(f"HTTP error from secondary backend: {http_exc.response.text}")
+        raise HTTPException(status_code=http_exc.response.status_code, detail=f"Secondary backend error: {http_exc.response.text}")
     except Exception as e:
         db.rollback()
+        print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 
