@@ -8,7 +8,7 @@ def create_chat_completion(query, search_results):
     
     try:
         response = openaiClient.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o",
             messages=[
                 {
                     "role": "system", 
