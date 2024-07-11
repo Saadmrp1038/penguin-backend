@@ -24,7 +24,7 @@ deploy_path = ""
 @router.get("/test")
 async def test():
     async with httpx.AsyncClient(timeout=1000) as client:
-        response = await client.get(local_path)
+        response = await client.get("http://127.0.0.1:8000")
         return response.json()
     
 #################################################################################################
