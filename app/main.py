@@ -34,6 +34,7 @@ async def authenticate_request(request: Request, call_next):
             "/api/v1/auth/signin", 
             "/favicon.ico",
             "/api/v1/query/openai",
+            "/api/v1/adminUrlTrain/test"
         ]
     ):
         return await call_next(request)
