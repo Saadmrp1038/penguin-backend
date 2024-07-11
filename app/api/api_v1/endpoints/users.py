@@ -32,7 +32,7 @@ async def get_user_by_email(user_id: uuid.UUID, db: Session = Depends(deps.get_d
 #   GET USER BY EMAIL
 #################################################################################################
 @router.get("/email/{email}", response_model=User)
-async def get_user_by_email(email: str, db: Session = Depends(deps.get_db)):
+async def check_user_by_email(email: str, db: Session = Depends(deps.get_db)):
     
     try:
         db_user = db.query(UserModel).filter(UserModel.email == email).first()
