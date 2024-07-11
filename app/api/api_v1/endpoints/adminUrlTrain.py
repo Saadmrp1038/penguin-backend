@@ -52,6 +52,10 @@ async def get_all_traininfo(db: Session = Depends(deps.get_db)):
 async def create_traininfo(url:str , db: Session = Depends(deps.get_db)):
     
     try:
+
+        existing_url = db.query(urlModel).filter(urlModel.url == url).first()
+        if existing_url:
+            raise HTTPException(status_code=400, detail="URL already exists")
         db_url = urlModel(
             url = url
         )
@@ -93,4 +97,3 @@ async def create_traininfo(url:str , db: Session = Depends(deps.get_db)):
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
     
 
-    
