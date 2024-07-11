@@ -224,6 +224,19 @@ async def get_chats_for_user(*, db: Session = Depends(deps.get_db), user_id: uui
         raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
 
 #################################################################################################
+#   GET ALL CHAT PREVIEWS
+#################################################################################################
+@router.get("/", response_model=List[Chat])
+async def get_chats_for_user(*, db: Session = Depends(deps.get_db)):
+    try:
+        db_chats = db.query(ChatModel).order_by(ChatModel.created_at.desc()).all()
+        return db_chats
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error: " + str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Unexpected error: " + str(e))
+
+#################################################################################################
 #   UPDATE CHAT BY ID
 #################################################################################################
 @router.put("/{chat_id}", response_model=Chat)
