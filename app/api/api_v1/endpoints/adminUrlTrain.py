@@ -17,6 +17,15 @@ router = APIRouter()
 COLLECTION_NAME = "admin_trainer"
 local_path = "http://146.190.202.22:8001"
 deploy_path = ""
+
+#################################################################################################
+#   GET Test
+#################################################################################################
+@router.get("/test")
+async def test():
+    async with httpx.AsyncClient(timeout=1000) as client:
+        response = await client.get(local_path)
+        return response.json()
     
 #################################################################################################
 #   GET Train info BY ID
