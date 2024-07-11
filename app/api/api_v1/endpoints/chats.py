@@ -44,6 +44,15 @@ async def create_chat(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
         
         queryText = db_chat.first_message
         
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
+        
+        combined_result = ""
+        result_list = []
+        for result in search_results:
+            # print(result.payload)
+            combined_result += f"{result.payload}"
+            result_list.append(result.payload)
+        
         db_full_chat = (
             db.query(ChatModel)
             .options(joinedload(ChatModel.messages))
@@ -57,15 +66,6 @@ async def create_chat(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
         
         # Sort messages by created_at
         db_full_chat.messages.sort(key=lambda message: message.created_at)
-        
-        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
-        
-        combined_result = ""
-        result_list = []
-        for result in search_results:
-            # print(result.payload)
-            combined_result += f"{result.payload}"
-            result_list.append(result.payload)
         
         # openai_response = create_chat_completion(queryText, combined_result)
         openai_response = create_chat_completion_context(queryText, db_full_chat.messages, combined_result)
@@ -148,7 +148,23 @@ async def update_chat(*, db: Session = Depends(deps.get_db), chat_id: uuid.UUID,
             combined_result += f"{result.payload}"
             result_list.append(result.payload)
         
-        openai_response = create_chat_completion(queryText, combined_result)
+        db_full_chat = (
+            db.query(ChatModel)
+            .options(joinedload(ChatModel.messages))
+            .filter(ChatModel.id == db_chat.id)
+            .first()
+        )
+        if not db_full_chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        
+        print(db_full_chat)
+        
+        # Sort messages by created_at
+        db_full_chat.messages.sort(key=lambda message: message.created_at)
+        
+        # openai_response = create_chat_completion(queryText, combined_result)
+        openai_response = create_chat_completion_context(queryText, db_full_chat.messages, combined_result)
+        
         
         db_message_assistant = MessageModel(
             chat_id = db_chat.id,
