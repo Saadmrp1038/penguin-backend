@@ -15,7 +15,7 @@ from app.helpers.qdrant_functions import create_semantic_chunks, generate_summar
 router = APIRouter()
 
 COLLECTION_NAME = "admin_trainer"
-local_path = "http://146.190.202.22:8001"
+local_path = "http://127.0.0.1:8001"
 deploy_path = ""
 
 #################################################################################################
