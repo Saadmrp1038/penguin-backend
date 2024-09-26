@@ -1,5 +1,21 @@
 # PenguinLLM Backend
 
+# Table of Contents
+
+1. [Overview](#overview)
+2. [Features](#features)
+   - [Admin Panel](#admin-panel)
+   - [Client Chat Interface](#client-chat-interface)
+   - [Automated Scraping](#automated-scraping)
+3. [Tech Stack](#tech-stack)
+   - [Backend](#backend)
+   - [Deployment](#deployment)
+4. [API Documentation](#api-documentation)
+5. [Installation and Setup](#installation-and-setup)
+   - [Prerequisites](#prerequisites)
+   - [Deployment](#deployment)
+6. [Related Repositories](#related-repositories)
+
 ## Overview
 
 The PenguinLLM backend powers a knowledge base platform with both admin and client-facing features. Admins can submit questions, answers, and website links, which are automatically integrated into the knowledge base. The client side allows users to interact with a chatbot that pulls answers from the knowledge base. If a user finds an answer unsatisfactory, they can report it, prompting admins to update the knowledge base.
