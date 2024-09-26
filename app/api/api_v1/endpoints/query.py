@@ -18,7 +18,7 @@ router = APIRouter()
 async def query_openai(query_in: Query):
     try:
         queryText = query_in.query
-        openai_response = rag_query(COLLECTION_NAME, queryText, 20)
+        openai_response = rag_query(COLLECTION_NAME, queryText, 10)
         
         query_response = Response(
             response = openai_response

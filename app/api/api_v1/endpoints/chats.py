@@ -44,7 +44,7 @@ async def create_chat(*, db: Session = Depends(deps.get_db), chat_in: ChatCreate
         
         queryText = db_chat.first_message
         
-        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 10)
         
         combined_result = ""
         result_list = []
@@ -139,7 +139,7 @@ async def update_chat(*, db: Session = Depends(deps.get_db), chat_id: uuid.UUID,
         db.commit()
         db.refresh(db_message_user)
         
-        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 20)
+        search_results = search_in_qdrant(COLLECTION_NAME, queryText, 10)
         
         combined_result = ""
         result_list = []

@@ -110,7 +110,7 @@ def get_points_by_uuid(collection_name, uuid):
                     models.FieldCondition(key="id", match=models.MatchValue(value=uuid)),
                 ]
             ),
-            limit=20,  
+            limit=10,  
             with_payload=False,
             with_vectors=False,
             offset=offset
